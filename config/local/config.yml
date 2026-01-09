@@ -1,0 +1,19 @@
+server:
+  httpPort: "8083"
+
+infrastructure:
+  retry:
+    maxAttempts: 5
+    delaySeconds: 2
+
+redis:
+  url: "redis://:localpassword@172.20.0.13:6379/0"
+
+security:
+  hmacSecret: "local-hmac-secret-key-123"
+  difficulty: 4
+  ttlMinutes: 5
+
+captcha:
+  ttlMinutes: 3
+  maxTries: 3
