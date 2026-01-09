@@ -1,0 +1,19 @@
+server:
+  httpPort: "8083"
+
+infrastructure:
+  retry:
+    maxAttempts: 5
+    delaySeconds: 2
+
+redis:
+  url: ""
+
+security:
+  hmacSecret: ""
+  difficulty: 4
+  ttlMinutes: 5
+
+captcha:
+  ttlMinutes: 3
+  maxTries: 3

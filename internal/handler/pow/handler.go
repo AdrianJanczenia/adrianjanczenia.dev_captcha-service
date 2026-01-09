@@ -9,15 +9,15 @@ import (
 	process "github.com/AdrianJanczenia/adrianjanczenia.dev_captcha-service/internal/process/pow"
 )
 
-type Process interface {
+type PowProcess interface {
 	Process(ctx context.Context) (*process.Response, error)
 }
 
 type Handler struct {
-	process Process
+	process PowProcess
 }
 
-func NewHandler(p Process) *Handler {
+func NewHandler(p PowProcess) *Handler {
 	return &Handler{
 		process: p,
 	}

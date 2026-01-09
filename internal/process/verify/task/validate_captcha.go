@@ -28,7 +28,7 @@ func NewValidateCaptchaTask(c ValidateCaptchaRedisClient, ttl int) *ValidateCapt
 }
 
 func (t *ValidateCaptchaTask) Execute(ctx context.Context, id, value string, captcha *captcha.Captcha) error {
-	key := fmt.Sprintf("capcha:%s", id)
+	key := fmt.Sprintf("captcha:%s", id)
 
 	if captcha.Value != value {
 		captcha.TriesLeft--

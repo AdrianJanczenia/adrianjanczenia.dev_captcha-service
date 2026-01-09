@@ -24,7 +24,7 @@ func NewFetchCaptchaTask(c ReadCaptchaRedisClient) *ReadCaptchaTask {
 }
 
 func (t *ReadCaptchaTask) Execute(ctx context.Context, id string) (*captcha.Captcha, error) {
-	key := fmt.Sprintf("capcha:%s", id)
+	key := fmt.Sprintf("captcha:%s", id)
 
 	data, err := t.client.Get(ctx, key)
 	if err != nil {
