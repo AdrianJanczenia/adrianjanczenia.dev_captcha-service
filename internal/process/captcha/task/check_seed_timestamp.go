@@ -30,7 +30,7 @@ func (t *CheckSeedTimestampTask) Execute(seed string) error {
 	}
 
 	issuedAt := time.Unix(ts, 0)
-	if time.Since(issuedAt) > time.Duration(t.ttlMinutes)*time.Minute {
+	if issuedAt.After(time.Now().Add(30*time.Second)) || time.Since(issuedAt) > time.Duration(t.ttlMinutes)*time.Minute {
 		return errors.ErrPowExpired
 	}
 

@@ -57,6 +57,27 @@ func TestClient_Set(t *testing.T) {
 	})
 }
 
+func TestClient_SetNX(t *testing.T) {
+	db, mock := redismock.NewClientMock()
+	client := &client{rdb: db}
+	ctx := context.Background()
+	for _, tc := range []struct {
+		name    string
+		created bool
+	}{
+		{name: "new seed", created: true},
+		{name: "used seed", created: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mock.ExpectSetNX("pow:seed", "1", 5*time.Minute).SetVal(tc.created)
+			created, err := client.SetNX(ctx, "pow:seed", "1", 5*time.Minute)
+			if err != nil || created != tc.created {
+				t.Fatalf("SetNX() = %t, %v; want %t, nil", created, err, tc.created)
+			}
+		})
+	}
+}
+
 func TestClient_Get(t *testing.T) {
 	db, mock := redismock.NewClientMock()
 	client := &client{rdb: db}
@@ -94,29 +115,6 @@ func TestClient_Del(t *testing.T) {
 		err := client.Del(ctx, key)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
-		}
-	})
-}
-
-func TestClient_Exists(t *testing.T) {
-	db, mock := redismock.NewClientMock()
-	client := &client{rdb: db}
-	ctx := context.Background()
-	key := "test-key"
-
-	t.Run("exists", func(t *testing.T) {
-		mock.ExpectExists(key).SetVal(1)
-		exists, err := client.Exists(ctx, key)
-		if err != nil || !exists {
-			t.Errorf("expected exists=true, err=nil; got %v, %v", exists, err)
-		}
-	})
-
-	t.Run("not exists", func(t *testing.T) {
-		mock.ExpectExists(key).SetVal(0)
-		exists, err := client.Exists(ctx, key)
-		if err != nil || exists {
-			t.Errorf("expected exists=false, err=nil; got %v, %v", exists, err)
 		}
 	})
 }

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -21,25 +22,35 @@ import (
 )
 
 type App struct {
-	httpServer *http.Server
+	httpServer  *http.Server
+	redisClient serviceRedis.Client
 }
 
 func Build(cfg *registry.Config) (*App, error) {
+	if cfg == nil || cfg.Infrastructure.Retry.MaxAttempts < 1 || cfg.Infrastructure.Retry.DelaySeconds < 0 || cfg.Server.HTTPPort == "" || cfg.Redis.URL == "" || cfg.Security.HmacSecret == "" || cfg.Security.TtlMinutes < 1 || cfg.Captcha.TtlMinutes < 1 || cfg.Captcha.MaxTries < 1 || cfg.Security.Difficulty < 1 || cfg.Security.Difficulty > 64 {
+		return nil, fmt.Errorf("invalid captcha-service configuration")
+	}
 	maxRetries := cfg.Infrastructure.Retry.MaxAttempts
 	retryDelay := cfg.Infrastructure.Retry.DelaySeconds
 	var err error
 
 	var redisClient serviceRedis.Client
-	for i := 0; i < maxRetries; i++ {
+	for i := range maxRetries {
 		redisClient, err = serviceRedis.NewClient(cfg.Redis.URL)
 		if err == nil {
-			if err = redisClient.Ping(context.Background()); err == nil {
+			pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err = redisClient.Ping(pingCtx)
+			cancel()
+			if err == nil {
 				log.Println("INFO: successfully connected to Redis")
 				break
 			}
+			_ = redisClient.Close()
 		}
-		log.Printf("INFO: could not connect to Redis, retrying in %v... (%d/%d)", retryDelay, i+1, maxRetries)
-		time.Sleep(retryDelay)
+		if i+1 < maxRetries {
+			log.Printf("INFO: could not connect to Redis, retrying in %v... (%d/%d)", retryDelay, i+1, maxRetries)
+			time.Sleep(retryDelay)
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -51,17 +62,15 @@ func Build(cfg *registry.Config) (*App, error) {
 
 	validateSignatureTask := tasksCaptcha.NewValidateSignatureTask(cfg.Security.HmacSecret)
 	checkSeedTimestampTask := tasksCaptcha.NewCheckSeedTimestampTask(cfg.Security.TtlMinutes)
-	validateUsedSeedTask := tasksCaptcha.NewValidateUsedSeedTask(redisClient)
 	verifyPowTask := tasksCaptcha.NewVerifyPowTask(cfg.Security.Difficulty)
-	marksSeedUsedTask := tasksCaptcha.NewMarkSeedUsedTask(redisClient, cfg.Captcha.TtlMinutes)
+	saveUsedSeedTask := tasksCaptcha.NewSaveUsedSeedTask(redisClient, cfg.Security.TtlMinutes)
 	generateCaptchaTask := tasksCaptcha.NewGenerateCaptchaTask()
 	saveCaptchaTask := tasksCaptcha.NewSaveCaptchaTask(redisClient, cfg.Captcha.TtlMinutes, cfg.Captcha.MaxTries)
-	captchaProcess := processCaptcha.NewProcess(validateSignatureTask, checkSeedTimestampTask, validateUsedSeedTask, verifyPowTask, marksSeedUsedTask, generateCaptchaTask, saveCaptchaTask)
+	captchaProcess := processCaptcha.NewProcess(validateSignatureTask, checkSeedTimestampTask, verifyPowTask, saveUsedSeedTask, generateCaptchaTask, saveCaptchaTask)
 	captchaHandler := handlerCaptcha.NewHandler(captchaProcess)
 
-	fetchCaptchaTask := tasksVerify.NewFetchCaptchaTask(redisClient)
-	validateCaptchaTask := tasksVerify.NewValidateCaptchaTask(redisClient, cfg.Captcha.TtlMinutes)
-	verifyProcess := processVerify.NewProcess(fetchCaptchaTask, validateCaptchaTask)
+	verifyCaptchaTask := tasksVerify.NewVerifyCaptchaTask(redisClient)
+	verifyProcess := processVerify.NewProcess(verifyCaptchaTask)
 	verifyHandler := handlerVerify.NewHandler(verifyProcess)
 
 	mux := http.NewServeMux()
@@ -72,13 +81,19 @@ func Build(cfg *registry.Config) (*App, error) {
 	httpServer := &http.Server{
 		Addr: ":" + cfg.Server.HTTPPort,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
 			r.URL.Path = strings.TrimSuffix(r.URL.Path, "/")
 			mux.ServeHTTP(w, r)
 		}),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    32 << 10,
 	}
 
 	return &App{
-		httpServer: httpServer,
+		httpServer:  httpServer,
+		redisClient: redisClient,
 	}, nil
 }
 
@@ -90,4 +105,5 @@ func (a *App) RunHTTP() error {
 func (a *App) Shutdown(ctx context.Context) {
 	log.Println("INFO: shutting down server...")
 	_ = a.httpServer.Shutdown(ctx)
+	_ = a.redisClient.Close()
 }

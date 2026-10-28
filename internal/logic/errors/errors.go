@@ -32,8 +32,8 @@ var (
 	ErrCaptchaNotFound     = &AppError{HTTPStatus: http.StatusNotFound, Slug: "error_captcha_not_found"}
 	ErrInvalidCaptchaValue = &AppError{HTTPStatus: http.StatusBadRequest, Slug: "error_captcha_invalid"}
 	ErrNoTriesLeft         = &AppError{HTTPStatus: http.StatusGone, Slug: "error_captcha_expired"}
-	ErrInvalidInput        = &AppError{HTTPStatus: http.StatusBadRequest, Slug: "error_message"}
-	ErrMethodNotAllowed    = &AppError{HTTPStatus: http.StatusMethodNotAllowed, Slug: "error_message"}
+	ErrInvalidInput        = &AppError{HTTPStatus: http.StatusBadRequest, Slug: "error_invalid_input"}
+	ErrMethodNotAllowed    = &AppError{HTTPStatus: http.StatusMethodNotAllowed, Slug: "error_method_not_allowed"}
 )
 
 func WriteJSON(w http.ResponseWriter, err error) {

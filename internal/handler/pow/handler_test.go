@@ -42,7 +42,7 @@ func TestHandler_Pow(t *testing.T) {
 				return nil, nil
 			},
 			wantStatus: http.StatusMethodNotAllowed,
-			wantSlug:   "error_message",
+			wantSlug:   "error_method_not_allowed",
 		},
 		{
 			name:   "process error",
@@ -65,6 +65,9 @@ func TestHandler_Pow(t *testing.T) {
 
 			if rr.Code != tt.wantStatus {
 				t.Errorf("status = %v, want %v", rr.Code, tt.wantStatus)
+			}
+			if tt.wantStatus == http.StatusMethodNotAllowed && rr.Header().Get("Allow") != http.MethodGet {
+				t.Errorf("Allow = %q, want GET", rr.Header().Get("Allow"))
 			}
 			if tt.wantSlug != "" {
 				var resp map[string]string

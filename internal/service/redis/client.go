@@ -8,11 +8,13 @@ import (
 )
 
 type Client interface {
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	Set(ctx context.Context, key string, value any, expiration time.Duration) error
+	SetNX(ctx context.Context, key string, value any, expiration time.Duration) (bool, error)
 	Get(ctx context.Context, key string) (string, error)
 	Del(ctx context.Context, key string) error
-	Exists(ctx context.Context, key string) (bool, error)
 	Ping(ctx context.Context) error
+	Close() error
+	VerifyCaptcha(ctx context.Context, key, answer string) (string, error)
 }
 
 type client struct {
@@ -30,8 +32,12 @@ func NewClient(url string) (Client, error) {
 	return &client{rdb: rdb}, nil
 }
 
-func (c *client) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+func (c *client) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
 	return c.rdb.Set(ctx, key, value, expiration).Err()
+}
+
+func (c *client) SetNX(ctx context.Context, key string, value any, expiration time.Duration) (bool, error) {
+	return c.rdb.SetNX(ctx, key, value, expiration).Result()
 }
 
 func (c *client) Get(ctx context.Context, key string) (string, error) {
@@ -42,14 +48,14 @@ func (c *client) Del(ctx context.Context, key string) error {
 	return c.rdb.Del(ctx, key).Err()
 }
 
-func (c *client) Exists(ctx context.Context, key string) (bool, error) {
-	val, err := c.rdb.Exists(ctx, key).Result()
-	if err != nil {
-		return false, err
-	}
-	return val > 0, nil
-}
-
 func (c *client) Ping(ctx context.Context) error {
 	return c.rdb.Ping(ctx).Err()
+}
+
+func (c *client) Close() error {
+	return c.rdb.Close()
+}
+
+func (c *client) VerifyCaptcha(ctx context.Context, key, answer string) (string, error) {
+	return verifyCaptchaScript.Run(ctx, c.rdb, []string{key}, answer).Text()
 }

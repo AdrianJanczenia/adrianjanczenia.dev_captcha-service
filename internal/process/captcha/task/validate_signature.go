@@ -21,9 +21,9 @@ func NewValidateSignatureTask(hmacSecret string) *ValidateSignatureTask {
 func (t *ValidateSignatureTask) Execute(seed, signature string) error {
 	h := hmac.New(sha256.New, []byte(t.hmacSecret))
 	h.Write([]byte(seed))
-	expected := hex.EncodeToString(h.Sum(nil))
 
-	if expected != signature {
+	provided, err := hex.DecodeString(signature)
+	if err != nil || !hmac.Equal(h.Sum(nil), provided) {
 		return errors.ErrInvalidSignature
 	}
 

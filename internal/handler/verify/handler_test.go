@@ -33,9 +33,9 @@ func TestHandler_Verify(t *testing.T) {
 		{
 			name:   "valid request",
 			method: http.MethodPost,
-			body:   processVerify.Request{CaptchaId: "id-123", CaptchaValue: "val-123"},
+			body:   processVerify.Request{CaptchaID: "id-123", CaptchaValue: "val-123"},
 			mockFunc: func(ctx context.Context, req processVerify.Request) (*processVerify.Response, error) {
-				return &processVerify.Response{CaptchaId: "id-123"}, nil
+				return &processVerify.Response{CaptchaID: "id-123"}, nil
 			},
 			wantStatus: http.StatusOK,
 		},
@@ -56,7 +56,7 @@ func TestHandler_Verify(t *testing.T) {
 		{
 			name:   "process returns app error",
 			method: http.MethodPost,
-			body:   processVerify.Request{CaptchaId: "id-123", CaptchaValue: "wrong"},
+			body:   processVerify.Request{CaptchaID: "id-123", CaptchaValue: "wrong"},
 			mockFunc: func(ctx context.Context, req processVerify.Request) (*processVerify.Response, error) {
 				return nil, appErrors.ErrInvalidCaptchaValue
 			},
@@ -66,7 +66,7 @@ func TestHandler_Verify(t *testing.T) {
 		{
 			name:   "process returns unknown error",
 			method: http.MethodPost,
-			body:   processVerify.Request{CaptchaId: "id-123", CaptchaValue: "val"},
+			body:   processVerify.Request{CaptchaID: "id-123", CaptchaValue: "val"},
 			mockFunc: func(ctx context.Context, req processVerify.Request) (*processVerify.Response, error) {
 				return nil, errors.New("db error")
 			},

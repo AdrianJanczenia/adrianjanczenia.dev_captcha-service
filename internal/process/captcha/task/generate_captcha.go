@@ -5,14 +5,18 @@ import (
 )
 
 type GenerateCaptchaTask struct {
-	store base64Captcha.Store
 }
 
 func NewGenerateCaptchaTask() *GenerateCaptchaTask {
-	return &GenerateCaptchaTask{
-		store: base64Captcha.DefaultMemStore,
-	}
+	return &GenerateCaptchaTask{}
 }
+
+// The library requires a Store even though this service persists the returned answer in Redis and never reads it through base64Captcha
+type discardStore struct{}
+
+func (discardStore) Set(string, string) error         { return nil }
+func (discardStore) Get(string, bool) string          { return "" }
+func (discardStore) Verify(string, string, bool) bool { return false }
 
 func (t *GenerateCaptchaTask) Execute() (string, string, string, error) {
 	driver := base64Captcha.NewDriverString(
@@ -27,7 +31,7 @@ func (t *GenerateCaptchaTask) Execute() (string, string, string, error) {
 		nil,
 	)
 
-	c := base64Captcha.NewCaptcha(driver, t.store)
+	c := base64Captcha.NewCaptcha(driver, discardStore{})
 
 	return c.Generate()
 }

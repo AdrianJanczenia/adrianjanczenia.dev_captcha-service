@@ -35,7 +35,7 @@ func TestHandler_Captcha(t *testing.T) {
 			method: http.MethodPost,
 			body:   process.Request{Seed: "s", Signature: "sig", Nonce: "n"},
 			mockFunc: func(ctx context.Context, req process.Request) (*process.Response, error) {
-				return &process.Response{CaptchaId: "id-123", CaptchaImg: "img-data"}, nil
+				return &process.Response{CaptchaID: "id-123", CaptchaImg: "img-data"}, nil
 			},
 			wantStatus: http.StatusOK,
 		},
@@ -44,14 +44,14 @@ func TestHandler_Captcha(t *testing.T) {
 			method:     http.MethodGet,
 			body:       nil,
 			wantStatus: http.StatusMethodNotAllowed,
-			wantSlug:   "error_message",
+			wantSlug:   "error_method_not_allowed",
 		},
 		{
 			name:       "invalid json",
 			method:     http.MethodPost,
 			body:       "invalid-json",
 			wantStatus: http.StatusBadRequest,
-			wantSlug:   "error_message",
+			wantSlug:   "error_invalid_input",
 		},
 		{
 			name:   "process returns app error",

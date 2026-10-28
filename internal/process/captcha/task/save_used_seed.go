@@ -9,7 +9,7 @@ import (
 )
 
 type SaveUsedSeedRedisClient interface {
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	SetNX(ctx context.Context, key string, value any, expiration time.Duration) (bool, error)
 }
 
 type SaveUsedSeedTask struct {
@@ -17,7 +17,7 @@ type SaveUsedSeedTask struct {
 	ttl    int
 }
 
-func NewMarkSeedUsedTask(c SaveUsedSeedRedisClient, ttl int) *SaveUsedSeedTask {
+func NewSaveUsedSeedTask(c SaveUsedSeedRedisClient, ttl int) *SaveUsedSeedTask {
 	return &SaveUsedSeedTask{
 		client: c,
 		ttl:    ttl,
@@ -27,9 +27,12 @@ func NewMarkSeedUsedTask(c SaveUsedSeedRedisClient, ttl int) *SaveUsedSeedTask {
 func (t *SaveUsedSeedTask) Execute(ctx context.Context, seed string) error {
 	key := fmt.Sprintf("pow:%s", seed)
 
-	err := t.client.Set(ctx, key, "1", time.Duration(t.ttl)*time.Minute)
+	created, err := t.client.SetNX(ctx, key, "1", time.Duration(t.ttl)*time.Minute)
 	if err != nil {
 		return errors.ErrInternalServerError
+	}
+	if !created {
+		return errors.ErrSeedAlreadyUsed
 	}
 
 	return nil

@@ -33,8 +33,6 @@ type Config struct {
 	} `yaml:"captcha"`
 }
 
-var Cfg *Config
-
 func LoadConfig() (*Config, error) {
 	type yamlConfig struct {
 		Server struct {

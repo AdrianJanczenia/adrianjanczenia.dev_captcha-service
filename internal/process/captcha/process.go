@@ -12,10 +12,6 @@ type CheckSeedTimestampTask interface {
 	Execute(seed string) error
 }
 
-type ValidateUsedSeedTask interface {
-	Execute(ctx context.Context, seed string) error
-}
-
 type VerifyPowTask interface {
 	Execute(seed, nonce string) error
 }
@@ -39,14 +35,13 @@ type Request struct {
 }
 
 type Response struct {
-	CaptchaId  string `json:"captchaId"`
+	CaptchaID  string `json:"captchaId"`
 	CaptchaImg string `json:"captchaImg"`
 }
 
 type Process struct {
 	validateSignatureTask  ValidateSignatureTask
 	checkSeedTimestampTask CheckSeedTimestampTask
-	validateUsedSeedTask   ValidateUsedSeedTask
 	verifyPowTask          VerifyPowTask
 	saveUsedSeedTask       SaveUsedSeedTask
 	generateCaptchaTask    GenerateCaptchaTask
@@ -56,7 +51,6 @@ type Process struct {
 func NewProcess(
 	validateSignatureTask ValidateSignatureTask,
 	checkSeedTimestampTask CheckSeedTimestampTask,
-	validateUsedSeedTask ValidateUsedSeedTask,
 	verifyPowTask VerifyPowTask,
 	saveUsedSeedTask SaveUsedSeedTask,
 	generateCaptchaTask GenerateCaptchaTask,
@@ -65,7 +59,6 @@ func NewProcess(
 	return &Process{
 		validateSignatureTask:  validateSignatureTask,
 		checkSeedTimestampTask: checkSeedTimestampTask,
-		validateUsedSeedTask:   validateUsedSeedTask,
 		verifyPowTask:          verifyPowTask,
 		saveUsedSeedTask:       saveUsedSeedTask,
 		generateCaptchaTask:    generateCaptchaTask,
@@ -79,10 +72,6 @@ func (p *Process) Process(ctx context.Context, req Request) (*Response, error) {
 	}
 
 	if err := p.checkSeedTimestampTask.Execute(req.Seed); err != nil {
-		return nil, err
-	}
-
-	if err := p.validateUsedSeedTask.Execute(ctx, req.Seed); err != nil {
 		return nil, err
 	}
 
@@ -104,7 +93,7 @@ func (p *Process) Process(ctx context.Context, req Request) (*Response, error) {
 	}
 
 	return &Response{
-		CaptchaId:  id,
+		CaptchaID:  id,
 		CaptchaImg: b64s,
 	}, nil
 }
