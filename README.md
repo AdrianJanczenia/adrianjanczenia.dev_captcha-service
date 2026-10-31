@@ -24,7 +24,17 @@ The service uses Go 1.25.1 (see `go.mod`). `APP_ENV=production` selects `config/
 
 Keep the PoW difficulty consistent with the front-end implementation: its current JavaScript solver expects four leading zero hexadecimal characters.
 
-From the repository root, start Redis, provide the required configuration, and run `go run .`. The `Dockerfile` is available for container builds.
+## Run locally
+
+1. Start a local Redis instance and set `REDIS_URL` to its connection URL. Set `HMAC_SECRET` to a private value in the environment. Neither value is supplied by `config/local/config.yml`.
+2. From this repository root, run `go run .`. With the local configuration, HTTP listens on port 8083.
+3. In another terminal, check that the service issues a PoW challenge:
+
+   ```sh
+   curl -i http://127.0.0.1:8083/pow
+   ```
+
+The `/captcha` and `/verify` endpoints form a sequence: first solve the work from `/pow`, then submit the returned CAPTCHA answer. The front end normally calls them through the gateway. For container use, the `Dockerfile` builds the service; its Redis address and HMAC secret still need to be supplied at runtime.
 
 ## Verification
 

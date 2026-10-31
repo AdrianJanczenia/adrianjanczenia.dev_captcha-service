@@ -22,7 +22,7 @@ func (t *GenerateCaptchaTask) Execute() (string, string, string, error) {
 	driver := base64Captcha.NewDriverString(
 		80,
 		240,
-		60,
+		80,
 		base64Captcha.OptionShowSineLine|base64Captcha.OptionShowSlimeLine,
 		6,
 		"1234567890ABCDEFGHJKLMNOPQRSTUVWXYZ",
