@@ -1,6 +1,6 @@
 module github.com/AdrianJanczenia/adrianjanczenia.dev_captcha-service
 
-go 1.25.1
+go 1.27.3
 
 require (
 	github.com/go-redis/redis v6.15.9+incompatible

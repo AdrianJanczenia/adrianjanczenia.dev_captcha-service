@@ -20,7 +20,7 @@ Error responses use a JSON `error` slug with the appropriate HTTP status. Invali
 
 ## Configuration
 
-The service uses Go 1.25.1 (see `go.mod`). `APP_ENV=production` selects `config/production/config.yml`; otherwise the local file is used. Supply `REDIS_URL` and `HMAC_SECRET` through environment variables; their YAML fields are intentionally empty. The configuration also defines the HTTP port, PoW difficulty and lifetime, CAPTCHA lifetime and attempt limit, and startup retry policy. Startup validates these settings and checks Redis with a bounded ping.
+The service uses Go 1.27.3 (see `go.mod`). `APP_ENV=production` selects `config/production/config.yml`; otherwise the local file is used. Supply `REDIS_URL` and `HMAC_SECRET` through environment variables; their YAML fields are intentionally empty. The configuration also defines the HTTP port, PoW difficulty and lifetime, CAPTCHA lifetime and attempt limit, and startup retry policy. Startup validates these settings and checks Redis with a bounded ping.
 
 Keep the PoW difficulty consistent with the front-end implementation: its current JavaScript solver expects four leading zero hexadecimal characters.
 
